@@ -1,6 +1,6 @@
 # 📸 Image Processing Backend Service
 
-This project is a backend system for an image processing service similar to **Cloudinary**. It allows users to register, log in, upload images, apply various transformations (resize, crop, rotate, watermark, etc.), and retrieve them in multiple formats.
+This project is a backend system for an image processing service similar to **Cloudinary**. It allows users to register, log in, upload images, apply various transformations (resize, crop, rotate, watermark, etc.), and retrieve them in multiple formats. Images are stored and served via [Cloudinary](https://cloudinary.com) for scalable, secure management.
 
 ---
 
@@ -10,6 +10,9 @@ This project is a backend system for an image processing service similar to **Cl
   - Sign-Up: Allow users to create an account.  
   - Log-In: Allow users to log into their account.  
   - JWT Authentication: Secure endpoints using JWTs for authenticated access.
+
+- **Image Storage**  
+  - Use **Cloudinary** to store uploaded images and manage transformations efficiently.
 
 - **Image Management**  
   - Upload Image: Allow users to upload images.  
@@ -26,7 +29,6 @@ This project is a backend system for an image processing service similar to **Cl
   - Compress  
   - Change format (JPEG, PNG, etc.)  
   - Apply filters (grayscale, sepia, etc.)  
-  - (Feel free to add more)
 
 ---
 
@@ -40,15 +42,16 @@ Register a new user.
 **Request Body**
 ```json
 {
-  "username": "user1",
-  "password": "password123"
+  "username": "abc",
+  "password": "abc"
 }
 ```
 
 **Response**
 ```json
 {
-  "user": { "id": "uuid", "username": "user1" },
+  "status": true,
+  "message": "User created successfully.",
   "token": "jwt_token_here"
 }
 ```
@@ -69,7 +72,8 @@ Log in an existing user.
 **Response**
 ```json
 {
-  "user": { "id": "uuid", "username": "user1" },
+  "status": true,
+  "message": "Login successful.",
   "token": "jwt_token_here"
 }
 ```
@@ -77,6 +81,8 @@ Log in an existing user.
 ---
 
 ### 🖼️ Image Management
+
+> **Note:** Images are uploaded to and stored in Cloudinary. The `file.path` returned by multer should be configured to return the Cloudinary URL, and `file.filename` as the Cloudinary public ID.
 
 #### `POST /images`
 Upload a new image.
@@ -87,12 +93,68 @@ Upload a new image.
 **Response**
 ```json
 {
-  "id": "imageId",
-  "url": "https://yourdomain.com/images/imageId",
-  "metadata": {
-    "width": 800,
-    "height": 600,
-    "format": "jpeg"
+  "success": true,
+  "image": {
+    "_id": "imageId",
+    "user": "userId",
+    "originalUrl": "https://res.cloudinary.com/your-cloud-name/image/upload/v167xxx/image.jpg",
+    "cloudinaryId": "public_id_here",
+    "createdAt": "2025-04-22T17:49:23.000Z",
+    "updatedAt": "2025-04-22T17:49:23.000Z"
+  }
+}
+```
+
+---
+
+#### `GET /images`
+List all images uploaded by the authenticated user.
+
+- **Headers:** `Authorization: Bearer <JWT>`
+
+**Response**
+```json
+{
+  "success": true,
+  "images": [
+    {
+      "_id": "img1",
+      "user": "userId",
+      "originalUrl": "https://res.cloudinary.com/.../img1.jpg",
+      "cloudinaryId": "public_id_1",
+      "createdAt": "2025-04-22T17:49:23.000Z",
+      "updatedAt": "2025-04-22T17:49:23.000Z"
+    },
+    {
+      "_id": "img2",
+      "user": "userId",
+      "originalUrl": "https://res.cloudinary.com/.../img2.png",
+      "cloudinaryId": "public_id_2",
+      "createdAt": "2025-04-22T17:49:23.000Z",
+      "updatedAt": "2025-04-22T17:49:23.000Z"
+    }
+  ]
+}
+```
+
+---
+
+#### `GET /images/:id`
+Retrieve a single image record.
+
+- **Headers:** `Authorization: Bearer <JWT>`
+
+**Response**
+```json
+{
+  "success": true,
+  "image": {
+    "_id": "imageId",
+    "user": "userId",
+    "originalUrl": "https://res.cloudinary.com/.../image.jpg",
+    "cloudinaryId": "public_id",
+    "createdAt": "2025-04-22T17:49:23.000Z",
+    "updatedAt": "2025-04-22T17:49:23.000Z"
   }
 }
 ```
@@ -100,7 +162,7 @@ Upload a new image.
 ---
 
 #### `POST /images/:id/transform`
-Apply one or more transformations to an existing image.
+Apply one or more transformations to an existing image. Responds with binary image data.
 
 - **Headers:** `Authorization: Bearer <JWT>`  
 - **Body Example:**
@@ -117,46 +179,9 @@ Apply one or more transformations to an existing image.
   }
   ```
 
-**Response**
-```json
-{
-  "url": "https://yourdomain.com/images/imageId?transformed=true",
-  "metadata": {
-    "width": 300,
-    "height": 200,
-    "format": "png"
-  }
-}
-```
-
----
-
-#### `GET /images/:id`
-Retrieve an original or transformed image.  
-- **Headers:** `Authorization: Bearer <JWT>`  
-- **Response:** Returns the binary image data.
-
----
-
-#### `GET /images`
-List all images uploaded by the authenticated user.  
-- **Headers:** `Authorization: Bearer <JWT>`
-
-**Response**
-```json
-[
-  {
-    "id": "img1",
-    "url": "...",
-    "metadata": { "width": 800, "height": 600, "format": "jpeg" }
-  },
-  {
-    "id": "img2",
-    "url": "...",
-    "metadata": { "width": 1024, "height": 768, "format": "png" }
-  }
-]
-```
+**Response:**
+- Content-Type header set to `image/{format}` (e.g., `image/png`)
+- Binary image buffer streamed in response body
 
 ---
 
@@ -214,8 +239,8 @@ services:
 
 1. **Clone the repository**  
    ```bash
-   git clone https://github.com/your-username/image-processor-backend.git
-   cd image-processor-backend
+   git clone https://github.com/vishal-gohil12/PixShift.git
+   cd PixShift
    ```
 
 2. **Create a `.env` file** in the project root:  
@@ -223,6 +248,9 @@ services:
    PORT=3000
    JWT_SECRET=your_secret_key
    DATABASE_URL=your_database_url
+   CLOUDINARY_CLOUD_NAME=""
+    CLOUDINARY_API_KEY=""
+    CLOUDINARY_API_SECRET=""
    ```
 
 3. **Build and launch with Docker Compose**  
@@ -238,10 +266,13 @@ services:
 
 ```
 ├── src/
-│   ├── auth/
-│   ├── images/
+│   ├── model/
+│   ├── route/
+│   ├── controller/
 │   ├── middleware/
-│   └── utils/
+│   ├── config/
+│   ├── types/
+│   └── index.ts
 ├── dist/
 ├── Dockerfile
 ├── docker-compose.yml
@@ -251,23 +282,7 @@ services:
 
 ---
 
-## ✅ Future Enhancements
-
-- CDN integration for faster delivery  
-- Support for S3 or other cloud storage backends  
-- Rate limiting and usage analytics  
-- Admin dashboard and user management UI  
-- WebSocket support for live processing updates  
-
----
-
-## 📬 License
-
-Released under the **MIT License**. See [LICENSE](./LICENSE) for details.
-
----
-
 ## ✨ Author
 
-**Vishal** — [GitHub Profile](https://github.com/yourgithub)
+**Vishal** — [GitHub Profile](https://github.com/vishal-gohil12)
 
